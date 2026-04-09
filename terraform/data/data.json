@@ -1,0 +1,8 @@
+{
+  "message": "Hello from S3!",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "data": {
+    "rest": "This data is served by REST Lambda",
+    "graphql": "This data is served by GraphQL Lambda"
+  }
+}

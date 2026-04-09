@@ -1,0 +1,23 @@
+{
+  "name": "learn-aws-lambda",
+  "version": "1.0.0",
+  "description": "Lambda functions for learn-aws project",
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "build:watch": "node esbuild.config.js --watch",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.19.0",
+    "archiver": "^6.0.0",
+    "typescript": "^5.0.0"
+  }
+}

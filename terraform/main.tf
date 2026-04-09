@@ -46,6 +46,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "data_bucket_encry
   }
 }
 
+# Pre-populate S3 bucket con JSON
+resource "aws_s3_object" "data_json" {
+  bucket = aws_s3_bucket.data_bucket.id
+  key    = "data.json"
+  source = "data/data.json"
+  etag   = filemd5("data/data.json")
+}
+
 # 4. IAM Role per Lambda
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-lambda-role"
@@ -97,11 +105,11 @@ resource "aws_iam_role_policy" "lambda_policy" {
 resource "aws_lambda_function" "rest_api" {
   function_name = "${var.project_name}-rest-api"
   runtime = var.lambda_runtime
-  handler = "rest.handler"
+  handler = "handler.handler"
   role = aws_iam_role.lambda_role.arn
   
-  filename = "lambda_rest.zip"
-  source_code_hash = filebase64sha256("lambda_rest.zip")
+  filename = "lambda/dist/rest/lambda-rest.zip"
+  source_code_hash = filebase64sha256("lambda/dist/rest/lambda-rest.zip")
   
   environment {
     variables = {
@@ -115,11 +123,11 @@ resource "aws_lambda_function" "rest_api" {
 resource "aws_lambda_function" "graphql_api" {
   function_name = "${var.project_name}-graphql-api"
   runtime = var.lambda_runtime
-  handler = "graphql.handler"
+  handler = "handler.handler"
   role = aws_iam_role.lambda_role.arn
   
-  filename = "lambda_graphql.zip"
-  source_code_hash = filebase64sha256("lambda_graphql.zip")
+  filename = "lambda/dist/graphql/lambda-graphql.zip"
+  source_code_hash = filebase64sha256("lambda/dist/graphql/lambda-graphql.zip")
   
   environment {
     variables = {

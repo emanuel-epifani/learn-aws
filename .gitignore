@@ -17,3 +17,7 @@ override.tf.json
 
 # Node modules
 node_modules/
+
+# Lambda
+lambda/dist/
+lambda/node_modules/
