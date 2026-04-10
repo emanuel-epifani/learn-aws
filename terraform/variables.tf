@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Nome del progetto"
   type = string
-  default = "learn-aws"
+  default = "learnaws"
 }
 
 variable "aws_region" {

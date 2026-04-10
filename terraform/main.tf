@@ -376,7 +376,7 @@ resource "aws_appsync_datasource" "graphql_datasources" {
   # Qui colleghiamo le Lambda GraphQL come datasource
   for_each       = local.graphql_lambdas
   api_id         = aws_appsync_graphql_api.graphql.id
-  name           = "${var.project_name}-lambda-datasource-${each.key}"
+  name           = "${var.project_name}_lambda_datasource_${each.key}"
   type           = "AWS_LAMBDA"
   service_role_arn = aws_iam_role.appsync_role.arn
 
