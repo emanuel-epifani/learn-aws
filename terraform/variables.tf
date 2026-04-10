@@ -21,3 +21,15 @@ variable "lambda_runtime" {
   type = string
   default = "nodejs18.x"
 }
+
+variable "lambda_timeout" {
+  description = "Timeout massimo per Lambda functions in secondi"
+  type = number
+  default = 30
+}
+
+variable "lambda_memory_size" {
+  description = "Memory allocation per Lambda functions in MB"
+  type = number
+  default = 256
+}

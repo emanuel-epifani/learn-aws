@@ -1,0 +1,17 @@
+type Query {
+  """
+  Recupera dati dal bucket S3
+  """
+  getData: Data
+}
+
+type Data {
+  """
+  Dati JSON dal bucket S3
+  """
+  content: String
+  """
+  Timestamp dell'ultima modifica
+  """
+  timestamp: String
+}

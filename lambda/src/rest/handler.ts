@@ -1,12 +1,31 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+
+const s3Client = new S3Client({});
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   console.log('REST Lambda invoked with event:', JSON.stringify(event));
 
   try {
-    // TODO: Validate JWT token
-    // TODO: Read from S3
-    // TODO: Return data
+    const bucketName = process.env.BUCKET_NAME;
+    if (!bucketName) {
+      throw new Error('BUCKET_NAME environment variable is not set');
+    }
+
+    // Read data.json from S3
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: 'data.json',
+    });
+
+    const response = await s3Client.send(command);
+    const dataString = await response.Body?.transformToString();
+
+    if (!dataString) {
+      throw new Error('Failed to read data from S3');
+    }
+
+    const data = JSON.parse(dataString);
 
     return {
       statusCode: 200,
@@ -14,7 +33,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message: 'REST Lambda - Hello World',
+        data: data,
         timestamp: new Date().toISOString(),
       }),
     };

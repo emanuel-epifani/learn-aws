@@ -23,24 +23,24 @@ output "s3_bucket_arn" {
   value = aws_s3_bucket.data_bucket.arn
 }
 
-output "lambda_rest_function_name" {
-  description = "Nome della Lambda REST API"
-  value = aws_lambda_function.rest_api.function_name
+output "lambda_rest_function_names" {
+  description = "Nomi delle Lambda REST API"
+  value = { for k, v in aws_lambda_function.rest_functions : k => v.function_name }
 }
 
-output "lambda_rest_function_arn" {
-  description = "ARN della Lambda REST API"
-  value = aws_lambda_function.rest_api.arn
+output "lambda_rest_function_arns" {
+  description = "ARN delle Lambda REST API"
+  value = { for k, v in aws_lambda_function.rest_functions : k => v.arn }
 }
 
-output "lambda_graphql_function_name" {
-  description = "Nome della Lambda GraphQL API"
-  value = aws_lambda_function.graphql_api.function_name
+output "lambda_graphql_function_names" {
+  description = "Nomi delle Lambda GraphQL API"
+  value = { for k, v in aws_lambda_function.graphql_functions : k => v.function_name }
 }
 
-output "lambda_graphql_function_arn" {
-  description = "ARN della Lambda GraphQL API"
-  value = aws_lambda_function.graphql_api.arn
+output "lambda_graphql_function_arns" {
+  description = "ARN delle Lambda GraphQL API"
+  value = { for k, v in aws_lambda_function.graphql_functions : k => v.arn }
 }
 
 output "api_gateway_id" {
@@ -51,6 +51,11 @@ output "api_gateway_id" {
 output "api_gateway_arn" {
   description = "ARN dell'API Gateway REST"
   value = aws_api_gateway_rest_api.api.arn
+}
+
+output "api_gateway_url" {
+  description = "URL dell'API Gateway REST per frontend React"
+  value = "${aws_api_gateway_rest_api.api.execution_arn}/${aws_api_gateway_stage.dev.stage_name}"
 }
 
 output "appsync_api_id" {

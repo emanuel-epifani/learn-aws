@@ -7,10 +7,10 @@ const functions = ['rest', 'graphql'];
 
 async function build() {
   console.log('Building Lambda functions...');
-  
+
   for (const func of functions) {
     console.log(`Building ${func} function...`);
-    
+
     // Build with esbuild
     await esbuild.build({
       entryPoints: [`src/${func}/handler.ts`],
@@ -18,23 +18,23 @@ async function build() {
       platform: 'node',
       target: 'node18',
       outfile: `dist/${func}/handler.js`,
-      external: ['aws-sdk'],
+      external: ['@aws-sdk/*'],
       logLevel: 'info'
     });
 
-    // Create ZIP
+    // Create ZIP - include only handler.js, not the entire directory
     console.log(`Creating ZIP for ${func}...`);
     const output = fs.createWriteStream(`dist/${func}/lambda-${func}.zip`);
     const archive = archiver('zip', { zlib: { level: 9 } });
-    
+
     archive.pipe(output);
-    archive.directory(`dist/${func}/`, false);
-    
+    archive.file(`dist/${func}/handler.js`, { name: 'handler.js' });
+
     await archive.finalize();
-    
+
     console.log(`✓ ${func} function built and zipped`);
   }
-  
+
   console.log('All Lambda functions built successfully!');
 }
 

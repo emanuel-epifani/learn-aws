@@ -1,37 +1,44 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+const s3Client = new S3Client({});
+
+export const handler = async (event: any) => {
   console.log('GraphQL Lambda invoked with event:', JSON.stringify(event));
 
   try {
-    // TODO: Validate JWT token
-    // TODO: Parse GraphQL query
-    // TODO: Read from S3
-    // TODO: Return GraphQL response
+    const bucketName = process.env.BUCKET_NAME;
+    if (!bucketName) {
+      throw new Error('BUCKET_NAME environment variable is not set');
+    }
 
+    // Read data.json from S3
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: 'data.json',
+    });
+
+    const response = await s3Client.send(command);
+    const dataString = await response.Body?.transformToString();
+
+    if (!dataString) {
+      throw new Error('Failed to read data from S3');
+    }
+
+    const data = JSON.parse(dataString);
+
+    // Return GraphQL response format
     return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data: {
-          hello: 'GraphQL Lambda - Hello World',
-        },
-        timestamp: new Date().toISOString(),
-      }),
+      data: data,
+      timestamp: new Date().toISOString(),
     };
   } catch (error) {
     console.error('Error in GraphQL Lambda:', error);
+    // Return GraphQL error format
     return {
-      statusCode: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        error: 'Internal Server Error',
+      error: {
         message: error instanceof Error ? error.message : 'Unknown error',
-      }),
+        type: 'Internal Server Error',
+      },
     };
   }
 };
