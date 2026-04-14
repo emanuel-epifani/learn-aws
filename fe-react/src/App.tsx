@@ -3,7 +3,7 @@ import { Authenticator, ThemeProvider } from '@aws-amplify/ui-react'
 import { Amplify } from 'aws-amplify'
 import '@aws-amplify/ui-react/styles.css'
 import awsConfig from './config/aws-exports'
-import ApiButtons from './components/ApiButtons'
+import HomePage from './components/HomePage.tsx'
 import './App.css'
 
 // Configura AWS Amplify
@@ -26,7 +26,7 @@ function App() {
               </header>
               
               <main>
-                <ApiButtons />
+                <HomePage />
               </main>
             </div>
           )}
