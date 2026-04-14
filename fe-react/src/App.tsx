@@ -1,38 +1,114 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { Authenticator, ThemeProvider } from '@aws-amplify/ui-react'
 import { Amplify } from 'aws-amplify'
 import '@aws-amplify/ui-react/styles.css'
 import awsConfig from './config/aws-exports'
-import HomePage from './components/HomePage.tsx'
+import { fetchRestAPI, fetchGraphQL } from './services/apiService'
 import './App.css'
 
 // Configura AWS Amplify
 Amplify.configure(awsConfig)
 
-// Crea QueryClient per TanStack Query
-const queryClient = new QueryClient()
+// Hook per chiamata REST API
+const useRestAPI = () => {
+  return useQuery({
+    queryKey: ['restAPI'],
+    queryFn: () => fetchRestAPI('/data'),
+    enabled: false // Non chiamare automaticamente
+  })
+}
+
+// Hook per chiamata GraphQL API
+const useGraphQLAPI = (query: string) => {
+  return useMutation({
+    mutationFn: () => fetchGraphQL(query)
+  })
+}
 
 function App() {
+  const restQuery = useRestAPI()
+  const graphQLMutation = useGraphQLAPI('{ getData { content timestamp } }')
+
+  const handleRestClick = () => {
+    restQuery.refetch()
+  }
+
+  const handleGraphQLClick = () => {
+    graphQLMutation.mutate()
+  }
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <Authenticator>
-          {({ signOut, user }) => (
-            <div className="app">
-              <header>
-                <h1>Learn AWS - Frontend</h1>
-                <p>Welcome, {user?.username || 'User'}</p>
-                <button onClick={signOut}>Sign Out</button>
-              </header>
-              
-              <main>
-                <HomePage />
-              </main>
-            </div>
-          )}
-        </Authenticator>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <Authenticator>
+        {({ signOut, user }) => (
+          <div className="app">
+            <header>
+              <h1>Learn AWS - Frontend</h1>
+              <p>Welcome, {user?.username || 'User'}</p>
+              <button onClick={signOut} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Sign Out</button>
+            </header>
+            
+            <main>
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">API Calls</h2>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Left column: REST API */}
+                  <div className="flex flex-col gap-4">
+                    <button
+                      onClick={handleRestClick}
+                      disabled={restQuery.isLoading}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {restQuery.isLoading ? 'Loading...' : 'Call REST API'}
+                    </button>
+                    
+                    {restQuery.data && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded">
+                        <h3 className="text-lg font-semibold mb-2">REST Response:</h3>
+                        <pre className="whitespace-pre-wrap text-sm">{JSON.stringify(restQuery.data, null, 2)}</pre>
+                      </div>
+                    )}
+
+                    {restQuery.error && (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded">
+                        <h3 className="text-lg font-semibold mb-2">REST Error:</h3>
+                        <pre className="whitespace-pre-wrap text-sm">{String(restQuery.error)}</pre>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right column: GraphQL API */}
+                  <div className="flex flex-col gap-4">
+                    <button
+                      onClick={handleGraphQLClick}
+                      disabled={graphQLMutation.isPending}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {graphQLMutation.isPending ? 'Loading...' : 'Call GraphQL API'}
+                    </button>
+                    
+                    {graphQLMutation.data && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded">
+                        <h3 className="text-lg font-semibold mb-2">GraphQL Response:</h3>
+                        <pre className="whitespace-pre-wrap text-sm">{JSON.stringify(graphQLMutation.data, null, 2)}</pre>
+                      </div>
+                    )}
+
+                    {graphQLMutation.error && (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded">
+                        <h3 className="text-lg font-semibold mb-2">GraphQL Error:</h3>
+                        <pre className="whitespace-pre-wrap text-sm">{String(graphQLMutation.error)}</pre>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        )}
+      </Authenticator>
+    </ThemeProvider>
   )
 }
 
