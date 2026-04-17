@@ -160,13 +160,6 @@ aws lambda list-functions           # Lambda functions
 aws cognito-idp list-user-pools     # User pools
 ```
 
-## Costi AWS
-
-- **Cognito**: Gratis fino a 50k MAU/mese
-- **Lambda**: Gratis fino a 1M richieste/mese
-- **S3**: ~€0.023/GB storage
-- **API Gateway**: ~$3.50/M richieste
-- **AppSync**: ~$4/M query
 
 ## Note Importanti
 
