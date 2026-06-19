@@ -1,172 +1,123 @@
-# Learn AWS - Progetto di Apprendimento AWS e Infrastructure as Code
+# Progetto di Apprendimento AWS e Infrastructure as Code
 
 Repository per imparare AWS services e Infrastructure as Code con Terraform.
 
-## Obiettivo del Progetto
+## Target Architecture
 
-Creare un'applicazione serverless completa per imparare i servizi AWS più comuni:
-- **Frontend React** con login Cognito
-- **Backend serverless** con Lambda functions
-- **API REST** e **GraphQL** 
-- **Storage** su S3
-- **Infrastructure as Code** con Terraform
-- **CI/CD** con GitHub Actions
-
-## Architettura
+Single-page React app with two independent columns, no data coupling between backends.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        React Frontend                            │
-│                    (Login Cognito + 2 bottoni)                   │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │
-                              │ JWT Token
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      AWS Cognito User Pool                        │
-│                      (Autenticazione)                             │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                ┌─────────────┴─────────────┐
-                │                           │
-                ▼                           ▼
-┌──────────────────────────────┐  ┌──────────────────────────────┐
-│      API Gateway (REST)      │  │       AppSync (GraphQL)       │
-│   + Cognito Authorizer       │  │   + Cognito Auth              │
-└──────────────┬───────────────┘  └──────────────┬───────────────┘
-               │                                  │
-               ▼                                  ▼
-┌──────────────────────────────┐  ┌──────────────────────────────┐
-│   Lambda REST Function       │  │   Lambda GraphQL Function    │
-│   (Valida JWT + Legge S3)    │  │   (Valida JWT + Legge S3)    │
-└──────────────┬───────────────┘  └──────────────┬───────────────┘
-               │                                  │
-               └──────────────┬───────────────────┘
-                              ▼
-              ┌───────────────────────────────┐
-              │        S3 Bucket              │
-              │    (Storage dati)             │
-              └───────────────────────────────┘
+┌─────────────────────────────┬─────────────────────────────┐
+│         NOTE MANAGER        │         FILE BIN            │
+│      (ECS + RDS + ALB)      │   (API Gateway + Lambda     │
+│                             │    + S3 + Cognito Auth)     │
+├─────────────────────────────┼─────────────────────────────┤
+│                             │                             │
+│  Title: _______________     │  Choose file: [file.pdf]    │
+│                             │  [Upload]                   │
+│  Content:                   │                             │
+│  ┌─────────────────┐        │  My files:                  │
+│  │                 │        │  - report.pdf [Dl] [Del]    │
+│  │                 │        │  - photo.png  [Dl] [Del]    │
+│  └─────────────────┘        │                             │
+│                             │                             │
+│  [Save Note]                │                             │
+│                             │                             │
+│  My notes:                  │                             │
+│  - Shopping list      [x]   │                             │
+│  - Meeting notes      [x]   │                             │
+│                             │                             │
+└─────────────────────────────┴─────────────────────────────┘
 ```
 
-## Servizi AWS Imparati
-
-### Autenticazione
-- **Cognito User Pool**: User authentication e JWT tokens
-- **Cognito User Pool Client**: React frontend integration
-
-### Backend
-- **Lambda Functions**: Serverless compute (REST + GraphQL)
-- **API Gateway**: REST API endpoints con Cognito authorizer
-- **AppSync**: GraphQL API con Cognito authentication
-
-### Storage
-- **S3 Bucket**: Object storage per dati
-
-### Infrastructure as Code
-- **Terraform**: Declarative infrastructure management
-- **AWS Provider**: Terraform provider per AWS
-
-### CI/CD
-- **GitHub Actions**: Automated deployment pipeline
-
-## Struttura Progetto
+## Backend Flows
 
 ```
-learn-aws/
-├── terraform/              # Infrastructure as Code
-│   ├── provider.tf         # AWS provider configuration
-│   ├── variables.tf        # Input variables
-│   ├── main.tf            # AWS resources definition
-│   └── outputs.tf         # Output for frontend
-├── backend/               # Lambda functions
-│   └── lambda/
-│       ├── rest/          # REST API Lambda
-│       └── graphql/       # GraphQL Lambda
-├── frontend/              # React application
-│   └── (React app)
-├── AWS-explained/        # Documentation
-│   ├── IAM.md
-│   ├── roadmap.md
-│   ├── terraform-overview.md
-│   └── infrastructure-terraform.md
-└── README.md
+User
+ │
+ ├─ Login ───► Cognito ───► JWT
+ │
+ ├─ Note Manager ───► ALB ───► ECS/Fargate ───► RDS
+ │
+ └─ File Bin ───► API Gateway ───► Lambda ───► S3
 ```
 
-## Getting Started
+## Stack 1 — Container (Note Manager)
 
-### Prerequisiti
-- AWS Account con IAM user configurato
-- Terraform installato
-- AWS CLI configurato con credenziali
-- Node.js per Lambda functions
+ECS task (Node/Express) in private subnet. ALB in public subnet as entry point. RDS PostgreSQL in private subnet. ECR stores Docker image.
 
-### Configurazione AWS CLI
-```bash
-aws configure
-# Access Key ID: [tuo access key]
-# Secret Access Key: [tuo secret key]
-# Default region: eu-north-1
-# Default output format: json
+## Stack 2 — Serverless (File Bin)
+
+API Gateway REST with Cognito authorizer. Lambda (Node) generates presigned URLs for S3 and handles object CRUD. Lambda runs outside VPC.
+
+## Shared Services
+
+- **Cognito User Pool** — single login for both stacks.
+- **VPC** — public subnets (ALB, NAT), private subnets (ECS, RDS).
+- **S3** — file storage.
+- **IAM** — roles for ECS tasks, Lambda, GitHub Actions.
+- **GitHub Actions** — build Docker image, push to ECR, terraform apply, update ECS.
+
+## End-to-End Flows
+
+Create note
+```
+React ──POST /api/notes──► ALB ──► ECS ──► INSERT ──► RDS
 ```
 
-### Deploy Infrastructure
-```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
+List notes
+```
+React ──GET /api/notes──► ALB ──► ECS ──► SELECT ──► RDS
 ```
 
-### Output per Frontend
-```bash
-terraform output user_pool_id
-terraform output user_pool_client_id
-terraform output appsync_api_url
-terraform output api_gateway_url
+Upload file
+```
+React ──POST /files/upload──► API Gateway ──► Lambda ──► presigned PUT URL
+React ──PUT file──► S3
 ```
 
-### Cleanup
-```bash
-cd terraform
-terraform destroy
+List files
+```
+React ──GET /files──► API Gateway ──► Lambda ──► S3 ListObjects ──► React
 ```
 
-## Workflow Sviluppo
-
-1. **Scrivi codice Terraform** → Definisci infrastruttura
-2. **terraform plan** → Vedi cosa cambierà
-3. **terraform apply** → Crea risorse AWS
-4. **Sviluppa Lambda functions** → Backend logic
-5. **Sviluppa React frontend** → UI con Cognito login
-6. **GitHub Actions** → CI/CD automation
-
-## Comandi Utili
-
-### Terraform
-```bash
-terraform init          # Scarica provider
-terraform plan          # Pianifica modifiche
-terraform apply         # Applica modifiche
-terraform destroy       # Distrugge risorse
-terraform output        # Mostra output
+Download file
+```
+React ──GET /files/:key/download──► API Gateway ──► Lambda ──► presigned GET URL
 ```
 
-### AWS CLI
-```bash
-aws resource-groups list-resources  # Tutte le risorse
-aws s3 ls                           # Bucket S3
-aws lambda list-functions           # Lambda functions
-aws cognito-idp list-user-pools     # User pools
+Delete file
+```
+React ──DELETE /files/:key──► API Gateway ──► Lambda ──► S3 DeleteObject
 ```
 
+Login
+```
+React ──Auth flow──► Cognito
+```
 
-## Note Importanti
+CI/CD
+```
+GitHub push ──► GitHub Actions ──► ECR + Terraform apply + ECS deploy
+```
 
-- **Terraform state** viene mantenuto in ogni folder separatamente
-- **Stesso IAM user** può essere usato per più progetti
-- **terraform destroy** distrugge solo risorse nel folder corrente
-- **Sempre terraform plan** prima di terraform apply
+## Services Used
+
+| Service | Stack | Purpose |
+|---------|-------|---------|
+| Cognito | Both | Auth, JWT |
+| VPC | Container | Network isolation |
+| ALB | Container | HTTP entry point |
+| ECS Fargate | Container | Node runtime |
+| ECR | Container | Docker registry |
+| RDS PostgreSQL | Container | Relational data |
+| API Gateway | Serverless | REST front door |
+| Lambda | Serverless | File operations |
+| S3 | Both | Object storage |
+| IAM | Both | Least-privilege roles |
+| GitHub Actions | Both | CI/CD |
+
+
 
 ## Risorse
 
@@ -174,6 +125,3 @@ aws cognito-idp list-user-pools     # User pools
 - [AWS Documentation](https://docs.aws.amazon.com)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 
-## License
-
-Progetto di apprendimento personale.
