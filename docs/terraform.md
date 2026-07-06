@@ -191,3 +191,95 @@ Bene: `region = var.aws_region` ovunque.
 ### 4. terraform plan sempre prima di apply
 
 Sempre. Senza eccezioni.
+
+## Comandi di Terraform
+
+### `terraform init`
+
+Prepara la cartella. Scarica il provider AWS e registra i moduli locali. Va fatto **una sola volta** e ogni volta che aggiungi un nuovo modulo.
+
+```bash
+cd terraform/environments/dev
+terraform init
+```
+
+Crea la cartella `.terraform/` con i binari del provider e il file `.terraform.lock.hcl` (che va committato).
+
+### `terraform plan`
+
+Simulazione. Mostra cosa creerebbe/modificherebbe/distruggerebbe **senza toccare nulla**. I simboli:
+
+- `+` = crea
+- `~` = modifica
+- `-` = distrugge
+- `(known after apply)` = AWS lo genera dopo, non lo sai ancora
+
+```bash
+terraform plan
+```
+
+### `terraform apply`
+
+Esegue davvero. Crea/modifica/distrugge le risorse su AWS. Ti chiede conferma prima di procedere.
+
+```bash
+terraform apply
+```
+
+Dopo `apply`, Terraform stampa gli output (URL, ID, ecc.) e aggiorna `terraform.tfstate`.
+
+### `terraform destroy`
+
+Distrugge tutte le risorse create. Utile per pulire e non pagare.
+
+```bash
+terraform destroy
+```
+
+### `terraform output`
+
+Stampa solo gli output (senza fare plan o apply). Utile per recuperare URL e ID dopo.
+
+```bash
+terraform output
+```
+
+### `terraform state list`
+
+Mostra tutte le risorse gestite da Terraform. Utile per capire cosa c'è nello state.
+
+```bash
+terraform state list
+```
+
+## Ordine di lavoro per ogni modulo
+
+Quando aggiungi o modifichi un modulo, segui questo ciclo:
+
+```
+1. Scrivi i file del modulo (variables.tf → main.tf → outputs.tf)
+2. Collega il modulo in environments/dev/main.tf
+3. Aggiungi gli output in environments/dev/outputs.tf
+4. terraform init     ← solo se è un nuovo modulo
+5. terraform plan     ← verifica che non ci siano errori
+6. terraform apply    ← crea le risorse su AWS
+7. Commit             ← modulo completo
+```
+
+**Sempre dalla cartella dell'ambiente:**
+
+```bash
+cd terraform/environments/dev
+```
+
+Mai lanciare Terraform dalla root del progetto o dalla cartella del modulo.
+
+## Cosa fare se qualcosa va storto
+
+| Problema | Cosa fare |
+|---|---|
+| `No configuration files` | Sei nella cartella sbagliata. Vai in `terraform/environments/dev` |
+| `No valid credential sources` | Lancia `aws configure` o verifica il profilo in `provider "aws"` |
+| `Error: module not found` | Lancia `terraform init` per registrare il nuovo modulo |
+| `terraform plan` mostra troppe risorse | Controlla `terraform.tfstate`, potrebbe essere corrotto o vuoto |
+| Risorse non vengono distrutte | `terraform destroy` non distrugge bucket S3 non vuoti. Svouta il bucket prima |
