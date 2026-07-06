@@ -1,107 +1,120 @@
-# Progetto di Apprendimento AWS e Infrastructure as Code
+# Learn AWS — Backend + Cloud Project
 
-Repository per imparare AWS services e Infrastructure as Code con Terraform.
+Side project per dimostrare padronanza di AWS e Terraform in un'architettura realistica per un backend engineer.
 
-## Target Architecture
+## Frontend
 
-Single-page React app with two independent columns, no data coupling between backends.
+Single-page React app con due colonne indipendenti, nessuno shared state tra i backend.
 
 ```
 ┌─────────────────────────────┬─────────────────────────────┐
 │         NOTE MANAGER        │         FILE BIN            │
-│      (ECS + RDS + ALB)      │   (API Gateway + Lambda     │
-│                             │    + S3 + Cognito Auth)     │
+│      (container stack)      │    (serverless stack)       │
 ├─────────────────────────────┼─────────────────────────────┤
-│                             │                             │
 │  Title: _______________     │  Choose file: [file.pdf]    │
-│                             │  [Upload]                   │
-│  Content:                   │                             │
-│  ┌─────────────────┐        │  My files:                  │
+│  Content:                   │  [Upload]                   │
+│  ┌─────────────────┐        │                             │
+│  │                 │        │  My files:                  │
 │  │                 │        │  - report.pdf [Dl] [Del]    │
-│  │                 │        │  - photo.png  [Dl] [Del]    │
-│  └─────────────────┘        │                             │
-│                             │                             │
+│  └─────────────────┘        │  - photo.png  [Dl] [Del]    │
 │  [Save Note]                │                             │
-│                             │                             │
 │  My notes:                  │                             │
 │  - Shopping list      [x]   │                             │
 │  - Meeting notes      [x]   │                             │
-│                             │                             │
 └─────────────────────────────┴─────────────────────────────┘
 ```
 
-## Backend Flows
+## Infrastruttura
 
 ```
-User
- │
- ├─ Login ───► Cognito ───► JWT
- │
- ├─ Note Manager ───► ALB ───► ECS/Fargate ───► RDS
- │
- └─ File Bin ───► API Gateway ───► Lambda ───► S3
+                         ┌──────────────┐
+                         │   Cognito    │
+                         │  User Pool   │
+                         └──────┬───────┘
+                                │ JWT
+                    ┌───────────┴────────────┐
+                    │                        │
+         ┌──────────▼──────────┐  ┌──────────▼──────────┐
+         │       ALB           │  │    API Gateway       │
+         │   (public subnet)   │  │  (AWS managed)       │
+         │   :80 / :443        │  │  Cognito Authorizer  │
+         │   Cognito Auth      │  │                      │
+         └──────────┬──────────┘  └──────────┬──────────┘
+                    │                        │
+         ┌──────────▼──────────┐  ┌──────────▼──────────┐
+         │   ECS Fargate       │  │     Lambda          │
+         │   (private subnet)  │  │  (AWS managed)      │
+         │   Node/Express      │  │  Node               │
+         └──────────┬──────────┘  └──────────┬──────────┘
+                    │                        │
+         ┌──────────▼──────────┐  ┌──────────▼──────────┐
+         │   RDS PostgreSQL    │  │      S3 Bucket      │
+         │   (private subnet)  │  │  (AWS managed)      │
+         └─────────────────────┘  └─────────────────────┘
+
+                    VPC
+         ┌─────────────────────────────────┐
+         │  ┌─────────┐  ┌─────────┐       │
+         │  │ public  │  │ public  │       │
+         │  │ subnet  │  │ subnet  │       │
+         │  │  (ALB)  │  │  (ALB)  │       │
+         │  └────┬────┘  └────┬────┘       │
+         │       │            │            │
+         │  ┌────▼────┐  ┌────▼────┐       │
+         │  │ private │  │ private │       │
+         │  │ subnet  │  │ subnet  │       │
+         │  │(ECS,RDS)│  │(ECS,RDS)│       │
+         │  └─────────┘  └─────────┘       │
+         └─────────────────────────────────┘
+
+         ECR ──► Docker image ──► ECS
+         IAM ──► roles per ECS, Lambda, GitHub Actions
+         GitHub Actions ──► build + push ECR + terraform apply
 ```
 
-## Stack 1 — Container (Note Manager)
+## Flow 1 — Container (Note Manager)
 
-ECS task (Node/Express) in private subnet. ALB in public subnet as entry point. RDS PostgreSQL in private subnet. ECR stores Docker image.
-
-## Stack 2 — Serverless (File Bin)
-
-API Gateway REST with Cognito authorizer. Lambda (Node) generates presigned URLs for S3 and handles object CRUD. Lambda runs outside VPC.
-
-## Shared Services
-
-- **Cognito User Pool** — single login for both stacks.
-- **VPC** — public subnets (ALB, NAT), private subnets (ECS, RDS).
-- **S3** — file storage.
-- **IAM** — roles for ECS tasks, Lambda, GitHub Actions.
-- **GitHub Actions** — build Docker image, push to ECR, terraform apply, update ECS.
-
-## End-to-End Flows
-
-Create note
 ```
-React ──POST /api/notes──► ALB ──► ECS ──► INSERT ──► RDS
+React ──POST /api/notes──► ALB ──► ECS (Node/Express) ──► RDS
+React ──GET /api/notes───► ALB ──► ECS ──► SELECT ──► RDS
 ```
 
-List notes
-```
-React ──GET /api/notes──► ALB ──► ECS ──► SELECT ──► RDS
-```
+ECS task in private subnet. ALB in public subnet come entry point. RDS PostgreSQL in private subnet. ECR store la Docker image.
 
-Upload file
+## Flow 2 — Serverless (File Bin)
+
 ```
 React ──POST /files/upload──► API Gateway ──► Lambda ──► presigned PUT URL
 React ──PUT file──► S3
-```
 
-List files
-```
-React ──GET /files──► API Gateway ──► Lambda ──► S3 ListObjects ──► React
-```
+React ──GET /files──► API Gateway ──► Lambda ──► S3 ListObjects
 
-Download file
-```
 React ──GET /files/:key/download──► API Gateway ──► Lambda ──► presigned GET URL
-```
 
-Delete file
-```
 React ──DELETE /files/:key──► API Gateway ──► Lambda ──► S3 DeleteObject
 ```
 
-Login
+API Gateway REST con Cognito authorizer. Lambda genera presigned URL per S3 e gestisce CRUD. Lambda gira fuori VPC.
+
+## Auth (condiviso)
+
 ```
-React ──Auth flow──► Cognito
+React ──login/register──► Cognito ──► JWT
+React ──JWT in header──► ALB (validato da ALB Cognito Auth)
+React ──JWT in header──► API Gateway (validato da Cognito Authorizer)
 ```
 
-CI/CD
+Entrambi gli stack validano il JWT al bordo (ALB / API Gateway). Il backend (ECS / Lambda) riceve solo traffico autenticato e non deve validare il JWT.
+
+## CI/CD
+
 ```
-GitHub push ──► GitHub Actions ──► ECR + Terraform apply + ECS deploy
+GitHub push ──► GitHub Actions ──► build Docker ──► push ECR
+                                      ──► terraform apply
+                                      ──► ECS new task definition
 ```
 
-## Services Used
+## Servizi AWS
 
 | Service | Stack | Purpose |
 |---------|-------|---------|
@@ -113,15 +126,35 @@ GitHub push ──► GitHub Actions ──► ECR + Terraform apply + ECS deplo
 | RDS PostgreSQL | Container | Relational data |
 | API Gateway | Serverless | REST front door |
 | Lambda | Serverless | File operations |
-| S3 | Both | Object storage |
+| S3 | Serverless | Object storage |
 | IAM | Both | Least-privilege roles |
 | GitHub Actions | Both | CI/CD |
 
+## Struttura Terraform
 
+```
+terraform/
+├── modules/
+│   ├── vpc/          # VPC + subnet + route tables (no NAT)
+│   ├── cognito/      # User Pool + Client
+│   ├── s3/           # Bucket + policy
+│   ├── iam/          # Roles per ECS, Lambda, GitHub Actions
+│   ├── ecr/          # Docker registry
+│   ├── alb/          # Load balancer + target group
+│   ├── rds/          # PostgreSQL + subnet group
+│   ├── ecs/          # Cluster + task definition + service
+│   ├── apigateway/   # REST API + Cognito authorizer
+│   └── lambda/       # Lambda function + permissions
+└── environments/
+    └── dev/
+        ├── main.tf           # provider + backend + chiama moduli
+        ├── variables.tf      # variabili ambiente
+        ├── outputs.tf        # output per frontend
+        └── terraform.tfvars  # valori dev
+```
 
 ## Risorse
 
 - [Terraform Documentation](https://www.terraform.io/docs)
 - [AWS Documentation](https://docs.aws.amazon.com)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-

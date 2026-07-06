@@ -28,7 +28,6 @@ aws iam create-user --user-name nome-utente
 aws iam attach-user-policy --user-name nome-utente --policy-arn arn:aws:iam::aws:policy/ReadOnlyAccess
 ```
 
-IAM -> create user
-- IAM user 
-    -> web console -> login with email+password
-    -> applicazioni -> access key + secret key
+IAM -> create user  
+    -> web console -> login with email+password  
+    -> applicazioni -> access key + secret key   
