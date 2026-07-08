@@ -42,3 +42,16 @@ output "lambda_role_arn" {
 output "ecr_repository_url" {
   value = module.ecr.repository_url
 }
+
+// alb
+output "alb_dns_name" {
+  value = module.alb.alb_dns_name
+}
+
+output "alb_sg_id" {
+  value = module.alb.alb_sg_id
+}
+
+output "target_group_arn" {
+  value = module.alb.target_group_arn
+}
