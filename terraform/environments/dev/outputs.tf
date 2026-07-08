@@ -28,3 +28,17 @@ output "s3_bucket_name" {
 output "s3_bucket_arn" {
   value = module.s3.bucket_arn
 }
+
+// iam
+output "ecs_task_execution_role_arn" {
+  value = module.iam.ecs_task_execution_role_arn
+}
+
+output "lambda_role_arn" {
+  value = module.iam.lambda_role_arn
+}
+
+// ecr
+output "ecr_repository_url" {
+  value = module.ecr.repository_url
+}

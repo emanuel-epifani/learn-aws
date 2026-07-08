@@ -32,3 +32,16 @@ module "s3" {
   project_name = var.project_name
   environment  = var.environment
 }
+
+module "iam" {
+  source        = "../../modules/iam"
+  project_name  = var.project_name
+  environment   = var.environment
+  s3_bucket_arn = module.s3.bucket_arn
+}
+
+module "ecr" {
+  source       = "../../modules/ecr"
+  project_name = var.project_name
+  environment  = var.environment
+}
