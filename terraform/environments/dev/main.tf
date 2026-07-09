@@ -6,6 +6,11 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 
 }
@@ -52,4 +57,30 @@ module "alb" {
   environment        = var.environment
   vpc_id             = module.vpc.vpc_id
   public_subnet_ids  = module.vpc.public_subnet_ids
+}
+
+module "ecs" {
+  source              = "../../modules/ecs"
+  project_name        = var.project_name
+  environment         = var.environment
+  aws_region          = var.aws_region
+  vpc_id              = module.vpc.vpc_id
+  public_subnet_ids   = module.vpc.public_subnet_ids
+  alb_sg_id           = module.alb.alb_sg_id
+  target_group_arn    = module.alb.target_group_arn
+  ecr_repo_url        = module.ecr.repository_url
+  execution_role_arn  = module.iam.ecs_task_execution_role_arn
+  rds_endpoint        = module.rds.rds_endpoint
+  db_name             = module.rds.rds_db_name
+  db_username         = module.rds.rds_username
+  db_password         = module.rds.rds_password
+}
+
+module "rds" {
+  source                = "../../modules/rds"
+  project_name          = var.project_name
+  environment           = var.environment
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  ecs_security_group_id = module.ecs.ecs_security_group_id
 }

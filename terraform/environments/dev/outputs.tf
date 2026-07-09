@@ -55,3 +55,26 @@ output "alb_sg_id" {
 output "target_group_arn" {
   value = module.alb.target_group_arn
 }
+
+// ecs
+output "ecs_security_group_id" {
+  value = module.ecs.ecs_security_group_id
+}
+
+output "ecs_cluster_name" {
+  value = module.ecs.ecs_cluster_name
+}
+
+// rds
+output "rds_endpoint" {
+  value = module.rds.rds_endpoint
+}
+
+output "rds_username" {
+  value = module.rds.rds_username
+}
+
+output "rds_password" {
+  value     = module.rds.rds_password
+  sensitive = true
+}
