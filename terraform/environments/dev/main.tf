@@ -114,3 +114,22 @@ module "lambda" {
   source_dir     = each.value.source_dir
   s3_bucket_name = each.value.s3_bucket_name
 }
+
+module "api_gateway" {
+  source       = "../../modules/api-gateway"
+  project_name = var.project_name
+  environment  = var.environment
+
+  routes = {
+    upload = {
+      route_key       = "GET /upload"
+      integration_uri = module.lambda["presigned-url"].lambda_invoke_arn
+      function_name   = module.lambda["presigned-url"].lambda_function_name
+    }
+    # thumbnail = {
+    #   route_key       = "POST /thumbnail"
+    #   integration_uri = module.lambda["thumbnail"].lambda_invoke_arn
+    #   function_name   = module.lambda["thumbnail"].lambda_function_name
+    # }
+  }
+}
