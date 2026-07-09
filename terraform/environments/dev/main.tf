@@ -11,6 +11,11 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.0"
     }
+
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.0"
+    }
   }
 
 }
@@ -83,4 +88,29 @@ module "rds" {
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.private_subnet_ids
   ecs_security_group_id = module.ecs.ecs_security_group_id
+}
+
+locals {
+  lambdas = {
+    presigned-url = {
+      source_dir     = "${path.root}/../../../be/src/lambda/presigned-url"
+      s3_bucket_name = module.s3.bucket_name
+    }
+    # thumbnail = {
+    #   source_dir     = "${path.root}/../../../be/src/lambda/thumbnail"
+    #   s3_bucket_name = module.s3.bucket_name
+    # }
+  }
+}
+
+module "lambda" {
+  source   = "../../modules/lambda"
+  for_each = local.lambdas
+
+  project_name    = var.project_name
+  environment     = var.environment
+  lambda_role_arn = module.iam.lambda_role_arn
+
+  source_dir     = each.value.source_dir
+  s3_bucket_name = each.value.s3_bucket_name
 }

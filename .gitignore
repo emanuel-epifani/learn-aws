@@ -21,3 +21,4 @@ node_modules/
 # Lambda
 lambda/dist/
 lambda/node_modules/
+terraform/**/dist/

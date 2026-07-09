@@ -78,3 +78,12 @@ output "rds_password" {
   value     = module.rds.rds_password
   sensitive = true
 }
+
+// lambda
+output "lambda_function_names" {
+  value = { for k, v in module.lambda : k => v.lambda_function_name }
+}
+
+output "lambda_function_arns" {
+  value = { for k, v in module.lambda : k => v.lambda_function_arn }
+}
