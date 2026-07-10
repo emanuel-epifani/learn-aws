@@ -22,15 +22,13 @@ terraform {
     bucket         = "learn-aws-dev-tf-state"
     key            = "terraform.tfstate"
     region         = "eu-north-1"
-    profile        = "learn-aws"
     dynamodb_table = "learn-aws-dev-tf-locks"
     encrypt        = true
   }
 }
 
 provider "aws" {
-  region  = var.aws_region
-  profile = "learn-aws"
+  region = var.aws_region
 }
 
 module "vpc" {
