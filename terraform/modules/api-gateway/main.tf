@@ -39,11 +39,11 @@ resource "aws_apigatewayv2_authorizer" "cognito_jwt" {
 
 # Route: una per entry nella mappa
 resource "aws_apigatewayv2_route" "this" {
-  for_each          = var.routes
-  api_id            = aws_apigatewayv2_api.this.id
-  route_key         = each.value.route_key
-  target            = "integrations/${aws_apigatewayv2_integration.lambda[each.key].id}"
-  authorizer_id     = aws_apigatewayv2_authorizer.cognito_jwt.id
+  for_each           = var.routes
+  api_id             = aws_apigatewayv2_api.this.id
+  route_key          = each.value.route_key
+  target             = "integrations/${aws_apigatewayv2_integration.lambda[each.key].id}"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito_jwt.id
   authorization_type = "JWT"
 }
 
@@ -62,10 +62,10 @@ resource "aws_apigatewayv2_stage" "this" {
 
 # Permesso: API Gateway puo invocare ogni Lambda
 resource "aws_lambda_permission" "api_gateway" {
-  for_each       = var.routes
-  statement_id   = "AllowAPIGatewayInvoke-${each.key}"
-  action         = "lambda:InvokeFunction"
-  function_name  = each.value.function_name
-  principal      = "apigateway.amazonaws.com"
-  source_arn     = "${aws_apigatewayv2_api.this.execution_arn}/*/*"
+  for_each      = var.routes
+  statement_id  = "AllowAPIGatewayInvoke-${each.key}"
+  action        = "lambda:InvokeFunction"
+  function_name = each.value.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.this.execution_arn}/*/*"
 }

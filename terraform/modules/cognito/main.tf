@@ -44,9 +44,9 @@ resource "aws_cognito_user_pool_client" "this" {
   generate_secret = false
 
   # durata dei token
-  access_token_validity  = 60   # 60 minuti
-  id_token_validity      = 60   # 60 minuti
-  refresh_token_validity = 30   # 30 giorni
+  access_token_validity  = 60 # 60 minuti
+  id_token_validity      = 60 # 60 minuti
+  refresh_token_validity = 30 # 30 giorni
 
   token_validity_units {
     access_token  = "minutes"
