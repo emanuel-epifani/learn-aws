@@ -72,8 +72,8 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_access" {
   policy_arn = aws_iam_policy.lambda_s3_access.arn
 }
 
-# ─── GitHub Actions User (frontend deploy) ───
-# Usato da GitHub Actions per fare upload dei file buildati su S3
+# ─── GitHub Actions User (CI/CD) ───
+# Usato da GitHub Actions per: terraform apply, deploy backend (ECR+ECS), deploy frontend (S3)
 resource "aws_iam_user" "github_actions" {
   name = "${var.project_name}-${var.environment}-gh-actions"
 
@@ -87,8 +87,16 @@ resource "aws_iam_access_key" "github_actions" {
   user = aws_iam_user.github_actions.name
 }
 
-resource "aws_iam_user_policy" "github_actions_frontend" {
-  name = "${var.project_name}-${var.environment}-frontend-deploy"
+# AdministratorAccess — in dev la pipeline deve poter creare/modificare qualsiasi risorsa AWS via Terraform
+# In prod si userebbe OIDC + ruolo con least-privilege separato per ogni pipeline
+resource "aws_iam_user_policy_attachment" "github_actions_admin" {
+  user       = aws_iam_user.github_actions.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+# Policy per terraform apply (gestione tutte le risorse AWS)
+resource "aws_iam_user_policy" "github_actions_terraform" {
+  name = "${var.project_name}-${var.environment}-terraform"
   user = aws_iam_user.github_actions.name
 
   policy = jsonencode({
@@ -96,11 +104,75 @@ resource "aws_iam_user_policy" "github_actions_frontend" {
     Statement = [
       {
         Effect = "Allow"
-        Action = ["s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::learn-aws-dev-tf-state",
+          "arn:aws:s3:::learn-aws-dev-tf-state/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = "arn:aws:dynamodb:eu-north-1:*:table/learn-aws-dev-tf-locks"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
         Resource = [
           var.frontend_bucket_arn,
           "${var.frontend_bucket_arn}/*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:DescribeImages",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeClusters",
+          "ecs:DescribeServices",
+          "ecs:DescribeTaskDefinition",
+          "ecs:DescribeTasks",
+          "ecs:ListClusters",
+          "ecs:ListServices",
+          "ecs:ListTaskDefinitions",
+          "ecs:ListTasks",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+          "ecs:UpdateService",
+          "ecs:RunTask",
+          "ecs:StopTask",
+          "iam:PassRole"
+        ]
+        Resource = "*"
       }
     ]
   })
