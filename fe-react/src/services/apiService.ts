@@ -4,6 +4,12 @@ if (!API_ENDPOINT) {
   throw new Error('Missing required env var: VITE_API_ENDPOINT')
 }
 
+const ALB_ENDPOINT = import.meta.env.VITE_ALB_ENDPOINT
+
+if (!ALB_ENDPOINT) {
+  throw new Error('Missing required env var: VITE_ALB_ENDPOINT')
+}
+
 const getAuthToken = async (): Promise<string> => {
   try {
     const { fetchAuthSession } = await import('aws-amplify/auth')
@@ -107,4 +113,63 @@ export const deleteFile = async (key: string) => {
   }
 
   return response.json() as Promise<{ deleted: boolean; key: string }>
+}
+
+export type Note = {
+  id: number
+  title: string
+  content: string
+  created_at: string
+}
+
+export const listNotes = async () => {
+  const token = await getAuthToken()
+
+  const response = await fetch(`${ALB_ENDPOINT}/api/notes`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return response.json() as Promise<{ notes: Note[] }>
+}
+
+export const createNote = async (title: string, content: string) => {
+  const token = await getAuthToken()
+
+  const response = await fetch(`${ALB_ENDPOINT}/api/notes`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ title, content })
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return response.json() as Promise<{ note: Note }>
+}
+
+export const deleteNote = async (id: number) => {
+  const token = await getAuthToken()
+
+  const response = await fetch(`${ALB_ENDPOINT}/api/notes/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return response.json() as Promise<{ deleted: boolean; id: number }>
 }

@@ -80,6 +80,8 @@ module "ecs" {
   db_name             = module.rds.rds_db_name
   db_username         = module.rds.rds_username
   db_password         = module.rds.rds_password
+  cognito_user_pool_id = module.cognito.user_pool_id
+  cognito_client_id    = module.cognito.user_pool_client_id
 }
 
 module "rds" {

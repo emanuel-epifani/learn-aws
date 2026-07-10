@@ -53,6 +53,14 @@ variable "db_password" {
   sensitive = true
 }
 
+variable "cognito_user_pool_id" {
+  type = string
+}
+
+variable "cognito_client_id" {
+  type = string
+}
+
 variable "app_port" {
   type    = number
   default = 3000
