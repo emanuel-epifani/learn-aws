@@ -1,12 +1,18 @@
 // Configurazione AWS Amplify
-// Questi valori verranno popolati dai Terraform outputs dopo il deploy
+// Questi valori vengono popolati dai Terraform outputs dopo il deploy
+
+const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID
+const userPoolClientId = import.meta.env.VITE_COGNITO_CLIENT_ID
+
+if (!userPoolId || !userPoolClientId) {
+  throw new Error('Missing required env vars: VITE_COGNITO_USER_POOL_ID, VITE_COGNITO_CLIENT_ID')
+}
 
 export const awsConfig = {
   Auth: {
     Cognito: {
-      userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID || 'eu-north-1_ABC123',
-      userPoolClientId: import.meta.env.VITE_COGNITO_CLIENT_ID || 'client-id-placeholder',
-      identityPoolId: import.meta.env.VITE_COGNITO_IDENTITY_POOL_ID || '',
+      userPoolId,
+      userPoolClientId,
       loginWith: {
         email: true
       }

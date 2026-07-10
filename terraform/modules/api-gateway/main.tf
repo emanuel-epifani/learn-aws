@@ -24,12 +24,27 @@ resource "aws_apigatewayv2_integration" "lambda" {
   integration_uri  = each.value.integration_uri
 }
 
+# JWT Authorizer — Cognito
+resource "aws_apigatewayv2_authorizer" "cognito_jwt" {
+  api_id           = aws_apigatewayv2_api.this.id
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "${var.project_name}-${var.environment}-cognito-jwt"
+
+  jwt_configuration {
+    audience = [var.cognito_client_id]
+    issuer   = "https://cognito-idp.${var.aws_region}.amazonaws.com/${var.cognito_user_pool_id}"
+  }
+}
+
 # Route: una per entry nella mappa
 resource "aws_apigatewayv2_route" "this" {
-  for_each = var.routes
-  api_id    = aws_apigatewayv2_api.this.id
-  route_key = each.value.route_key
-  target    = "integrations/${aws_apigatewayv2_integration.lambda[each.key].id}"
+  for_each          = var.routes
+  api_id            = aws_apigatewayv2_api.this.id
+  route_key         = each.value.route_key
+  target            = "integrations/${aws_apigatewayv2_integration.lambda[each.key].id}"
+  authorizer_id     = aws_apigatewayv2_authorizer.cognito_jwt.id
+  authorization_type = "JWT"
 }
 
 # Stage con auto-deploy

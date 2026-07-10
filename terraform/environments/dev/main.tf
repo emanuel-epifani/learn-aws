@@ -121,6 +121,10 @@ module "api_gateway" {
   project_name = var.project_name
   environment  = var.environment
 
+  cognito_user_pool_id = module.cognito.user_pool_id
+  cognito_client_id    = module.cognito.user_pool_client_id
+  aws_region           = var.aws_region
+
   routes = {
     upload = {
       route_key       = "GET /upload"
