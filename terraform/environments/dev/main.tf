@@ -18,6 +18,14 @@ terraform {
     }
   }
 
+  backend "s3" {
+    bucket         = "learn-aws-dev-tf-state"
+    key            = "terraform.tfstate"
+    region         = "eu-north-1"
+    profile        = "learn-aws"
+    dynamodb_table = "learn-aws-dev-tf-locks"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
