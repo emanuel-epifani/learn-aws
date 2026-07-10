@@ -38,6 +38,15 @@ output "lambda_role_arn" {
   value = module.iam.lambda_role_arn
 }
 
+output "github_actions_access_key_id" {
+  value = module.iam.github_actions_access_key_id
+}
+
+output "github_actions_secret_access_key" {
+  value     = module.iam.github_actions_secret_access_key
+  sensitive = true
+}
+
 // ecr
 output "ecr_repository_url" {
   value = module.ecr.repository_url
@@ -91,4 +100,13 @@ output "lambda_function_arns" {
 // api gateway
 output "api_endpoint" {
   value = module.api_gateway.api_endpoint
+}
+
+// frontend
+output "frontend_bucket_name" {
+  value = module.frontend.frontend_bucket_name
+}
+
+output "frontend_website_endpoint" {
+  value = module.frontend.frontend_website_endpoint
 }

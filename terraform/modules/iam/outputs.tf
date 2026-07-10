@@ -5,3 +5,12 @@ output "ecs_task_execution_role_arn" {
 output "lambda_role_arn" {
   value = aws_iam_role.lambda.arn
 }
+
+output "github_actions_access_key_id" {
+  value = aws_iam_access_key.github_actions.id
+}
+
+output "github_actions_secret_access_key" {
+  value     = aws_iam_access_key.github_actions.secret
+  sensitive = true
+}

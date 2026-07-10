@@ -71,3 +71,37 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_access" {
   role       = aws_iam_role.lambda.name
   policy_arn = aws_iam_policy.lambda_s3_access.arn
 }
+
+# ─── GitHub Actions User (frontend deploy) ───
+# Usato da GitHub Actions per fare upload dei file buildati su S3
+resource "aws_iam_user" "github_actions" {
+  name = "${var.project_name}-${var.environment}-gh-actions"
+
+  tags = {
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_iam_access_key" "github_actions" {
+  user = aws_iam_user.github_actions.name
+}
+
+resource "aws_iam_user_policy" "github_actions_frontend" {
+  name = "${var.project_name}-${var.environment}-frontend-deploy"
+  user = aws_iam_user.github_actions.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+        Resource = [
+          var.frontend_bucket_arn,
+          "${var.frontend_bucket_arn}/*"
+        ]
+      }
+    ]
+  })
+}

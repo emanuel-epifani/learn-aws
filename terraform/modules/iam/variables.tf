@@ -9,3 +9,8 @@ variable "environment" {
 variable "s3_bucket_arn" {
   type = string
 }
+
+variable "frontend_bucket_arn" {
+  type    = string
+  default = ""
+}

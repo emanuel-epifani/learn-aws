@@ -44,10 +44,11 @@ module "s3" {
 }
 
 module "iam" {
-  source        = "../../modules/iam"
-  project_name  = var.project_name
-  environment   = var.environment
-  s3_bucket_arn = module.s3.bucket_arn
+  source             = "../../modules/iam"
+  project_name       = var.project_name
+  environment        = var.environment
+  s3_bucket_arn      = module.s3.bucket_arn
+  frontend_bucket_arn = module.frontend.frontend_bucket_arn
 }
 
 module "ecr" {
@@ -132,4 +133,10 @@ module "api_gateway" {
     #   function_name   = module.lambda["thumbnail"].lambda_function_name
     # }
   }
+}
+
+module "frontend" {
+  source       = "../../modules/frontend"
+  project_name = var.project_name
+  environment  = var.environment
 }
