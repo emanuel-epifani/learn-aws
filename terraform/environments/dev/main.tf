@@ -97,10 +97,18 @@ locals {
       source_dir     = "${path.root}/../../../be/src/lambda/presigned-url"
       s3_bucket_name = module.s3.bucket_name
     }
-    # thumbnail = {
-    #   source_dir     = "${path.root}/../../../be/src/lambda/thumbnail"
-    #   s3_bucket_name = module.s3.bucket_name
-    # }
+    list-files = {
+      source_dir     = "${path.root}/../../../be/src/lambda/list-files"
+      s3_bucket_name = module.s3.bucket_name
+    }
+    download-file = {
+      source_dir     = "${path.root}/../../../be/src/lambda/download-file"
+      s3_bucket_name = module.s3.bucket_name
+    }
+    delete-file = {
+      source_dir     = "${path.root}/../../../be/src/lambda/delete-file"
+      s3_bucket_name = module.s3.bucket_name
+    }
   }
 }
 
@@ -131,11 +139,21 @@ module "api_gateway" {
       integration_uri = module.lambda["presigned-url"].lambda_invoke_arn
       function_name   = module.lambda["presigned-url"].lambda_function_name
     }
-    # thumbnail = {
-    #   route_key       = "POST /thumbnail"
-    #   integration_uri = module.lambda["thumbnail"].lambda_invoke_arn
-    #   function_name   = module.lambda["thumbnail"].lambda_function_name
-    # }
+    list = {
+      route_key       = "GET /files"
+      integration_uri = module.lambda["list-files"].lambda_invoke_arn
+      function_name   = module.lambda["list-files"].lambda_function_name
+    }
+    download = {
+      route_key       = "GET /files/{key}/download"
+      integration_uri = module.lambda["download-file"].lambda_invoke_arn
+      function_name   = module.lambda["download-file"].lambda_function_name
+    }
+    delete = {
+      route_key       = "DELETE /files/{key}"
+      integration_uri = module.lambda["delete-file"].lambda_invoke_arn
+      function_name   = module.lambda["delete-file"].lambda_function_name
+    }
   }
 }
 
