@@ -7,6 +7,7 @@ import ServerlessPage from './pages/ServerlessPage'
 import ContainerPage from './pages/ContainerPage'
 import './App.css'
 
+
 Amplify.configure(awsConfig)
 
 type Page = 'serverless' | 'container'
