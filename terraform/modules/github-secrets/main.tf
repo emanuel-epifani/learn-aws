@@ -27,7 +27,7 @@ resource "github_actions_secret" "aws_secret_access_key" {
 resource "github_actions_secret" "alb_endpoint" {
   repository      = var.github_repository
   secret_name     = "VITE_ALB_ENDPOINT"
-  plaintext_value = var.alb_endpoint
+  plaintext_value = "http://${var.alb_endpoint}"
 }
 
 resource "github_actions_secret" "api_endpoint" {

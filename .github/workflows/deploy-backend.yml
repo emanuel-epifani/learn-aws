@@ -3,9 +3,6 @@ name: Deploy Backend (ECS)
 on:
   push:
     branches: [main]
-    paths:
-      - "be/src/container/**"
-      - ".github/workflows/deploy-backend.yml"
 
 env:
   AWS_REGION: eu-north-1
