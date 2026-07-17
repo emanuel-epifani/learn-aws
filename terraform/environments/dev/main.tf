@@ -16,6 +16,11 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.0"
     }
+
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.0"
+    }
   }
 
   backend "s3" {
@@ -29,6 +34,15 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+}
+
+data "aws_secretsmanager_secret_version" "github_token" {
+  secret_id = "${var.project_name}-${var.environment}-github-token"
+}
+
+provider "github" {
+  token = data.aws_secretsmanager_secret_version.github_token.secret_string
+  owner = "emanuel-epifani"
 }
 
 module "vpc" {
@@ -169,4 +183,18 @@ module "frontend" {
   source       = "../../modules/frontend"
   project_name = var.project_name
   environment  = var.environment
+}
+
+module "github_secrets" {
+  source = "../../modules/github-secrets"
+
+  github_owner      = var.github_owner
+  github_repository = var.github_repository
+
+  aws_access_key_id     = module.iam.github_actions_access_key_id
+  aws_secret_access_key = module.iam.github_actions_secret_access_key
+  alb_endpoint          = module.alb.alb_dns_name
+  api_endpoint          = module.api_gateway.api_endpoint
+  cognito_user_pool_id  = module.cognito.user_pool_id
+  cognito_client_id     = module.cognito.user_pool_client_id
 }
